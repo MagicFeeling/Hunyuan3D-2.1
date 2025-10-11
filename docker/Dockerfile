@@ -38,8 +38,10 @@ ENV PATH="/workspace/miniconda3/bin:${PATH}"
 # initialize conda
 RUN conda init bash
 
-# create and activate conda environment
-RUN conda create -n hunyuan3d21 python=3.10 && echo "source activate hunyuan3d21" > ~/.bashrc
+# accept conda terms of service and create environment
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda create -n hunyuan3d21 python=3.10 && echo "source activate hunyuan3d21" > ~/.bashrc
 ENV PATH="/workspace/miniconda3/envs/hunyuan3d21/bin:${PATH}"
 
 # Set conda to always auto-approve
@@ -56,8 +58,9 @@ RUN pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url h
 # Clone Hunyuan3D-2.1 repository
 RUN git clone https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1.git
 
-# Install Python dependencies from modified requirements.txt
-RUN pip install -r Hunyuan3D-2.1/requirements.txt
+# Install Python dependencies (excluding problematic bpy package)
+RUN cd Hunyuan3D-2.1 && grep -v "^bpy==" requirements.txt > docker_requirements.txt && \
+    pip install -r docker_requirements.txt
 
 # Install custom_rasterizer
 RUN cd /workspace/Hunyuan3D-2.1/hy3dpaint/custom_rasterizer && \
