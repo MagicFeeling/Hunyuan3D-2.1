@@ -1,0 +1,95 @@
+# Dockerfile for Hunyuan3D-2.1 Data Preprocessing
+FROM ubuntu:22.04
+
+LABEL name="hunyuan3d21-preprocessing" maintainer="hunyuan3d21"
+
+# Avoid interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Create workspace
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    wget \
+    curl \
+    python3 \
+    python3-pip \
+    python3-dev \
+    libx11-6 \
+    libxi6 \
+    libxxf86vm1 \
+    libxfixes3 \
+    libxrender1 \
+    libgl1 \
+    libglu1-mesa \
+    libsm6 \
+    libxext6 \
+    libeigen3-dev \
+    libcgal-dev \
+    cmake \
+    libxkbcommon0 \
+    libxkbcommon-x11-0 \
+    libxcb-xkb1 \
+    libxcb-icccm4 \
+    libxcb-image0 \
+    libxcb-keysyms1 \
+    libxcb-randr0 \
+    libxcb-render-util0 \
+    libxcb-shape0 \
+    libxcb-xinerama0 \
+    libxcb-xinput0 \
+    libxcb-xfixes0 \
+    libxcb-cursor0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and install Blender 4.1
+RUN wget -q https://mirror.clarkson.edu/blender/release/Blender4.1/blender-4.1.0-linux-x64.tar.xz && \
+    tar -xf blender-4.1.0-linux-x64.tar.xz && \
+    mv blender-4.1.0-linux-x64 /opt/blender && \
+    rm blender-4.1.0-linux-x64.tar.xz && \
+    ln -s /opt/blender/blender /usr/local/bin/blender
+
+# Set Blender environment
+ENV BLENDER_PATH=/opt/blender/blender
+ENV PATH="/opt/blender:${PATH}"
+
+# Install Python packages for Blender's Python
+RUN /opt/blender/4.1/python/bin/python3.11 -m ensurepip && \
+    /opt/blender/4.1/python/bin/python3.11 -m pip install --upgrade pip && \
+    /opt/blender/4.1/python/bin/python3.11 -m pip install \
+    OpenEXR \
+    Imath \
+    opencv-python \
+    numpy
+
+# Enable Blender addons (OBJ, PLY, STL importers)
+RUN /opt/blender/blender -b --python-expr "import bpy; \
+    bpy.ops.preferences.addon_enable(module='io_scene_obj'); \
+    bpy.ops.preferences.addon_enable(module='io_mesh_ply'); \
+    bpy.ops.preferences.addon_enable(module='io_mesh_stl'); \
+    bpy.ops.preferences.addon_enable(module='io_scene_gltf2'); \
+    bpy.ops.preferences.addon_enable(module='io_scene_fbx'); \
+    bpy.ops.wm.save_userpref()" || echo "Addons may already be enabled"
+
+# Install Python packages for watertight processing
+RUN pip3 install --no-cache-dir \
+    numpy \
+    trimesh \
+    scipy \
+    scikit-image \
+    tqdm \
+    pymeshlab \
+    libigl
+
+# Set environment for OpenEXR
+ENV OPENCV_IO_ENABLE_OPENEXR=1
+
+# Set working directory
+WORKDIR /workspace
+
+# Default command
+CMD ["/bin/bash"]

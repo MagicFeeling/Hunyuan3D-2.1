@@ -27,18 +27,54 @@ import cv2
 
 """=============== BLENDER ==============="""
 
+# Blender 4.x uses new import operators
+def get_import_function(ext):
+    """Get the correct import function for Blender version"""
+    if ext == "obj":
+        # Try new operator first (Blender 4.x), fall back to old (Blender 3.x)
+        if hasattr(bpy.ops.wm, 'obj_import'):
+            return bpy.ops.wm.obj_import
+        else:
+            return bpy.ops.import_scene.obj
+    elif ext == "ply":
+        if hasattr(bpy.ops.wm, 'ply_import'):
+            return bpy.ops.wm.ply_import
+        else:
+            return bpy.ops.import_mesh.ply
+    elif ext == "stl":
+        if hasattr(bpy.ops.wm, 'stl_import'):
+            return bpy.ops.wm.stl_import
+        else:
+            return bpy.ops.import_mesh.stl
+    elif ext in ["glb", "gltf"]:
+        return bpy.ops.import_scene.gltf
+    elif ext == "fbx":
+        return bpy.ops.import_scene.fbx
+    elif ext == "usd":
+        return bpy.ops.import_scene.usd
+    elif ext == "usda":
+        return bpy.ops.import_scene.usda
+    elif ext == "dae":
+        return bpy.ops.wm.collada_import
+    elif ext == "abc":
+        return bpy.ops.wm.alembic_import
+    elif ext == "blend":
+        return bpy.ops.wm.append
+    else:
+        raise ValueError(f"Unsupported file extension: {ext}")
+
 IMPORT_FUNCTIONS: Dict[str, Callable] = {
-    "obj": bpy.ops.import_scene.obj,
-    "glb": bpy.ops.import_scene.gltf,
-    "gltf": bpy.ops.import_scene.gltf,
-    "usd": bpy.ops.import_scene.usd,
-    "fbx": bpy.ops.import_scene.fbx,
-    "stl": bpy.ops.import_mesh.stl,
-    "usda": bpy.ops.import_scene.usda,
-    "dae": bpy.ops.wm.collada_import,
-    "ply": bpy.ops.import_mesh.ply,
-    "abc": bpy.ops.wm.alembic_import,
-    "blend": bpy.ops.wm.append,
+    "obj": get_import_function("obj"),
+    "glb": get_import_function("glb"),
+    "gltf": get_import_function("gltf"),
+    "usd": get_import_function("usd"),
+    "fbx": get_import_function("fbx"),
+    "stl": get_import_function("stl"),
+    "usda": get_import_function("usda"),
+    "dae": get_import_function("dae"),
+    "ply": get_import_function("ply"),
+    "abc": get_import_function("abc"),
+    "blend": get_import_function("blend"),
 }
 
 EXT = {

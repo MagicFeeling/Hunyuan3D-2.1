@@ -24,6 +24,7 @@
 
 ## 🔥 News
 
+- **Jan 11, 2025**: 🐳 **New!** Docker-based preprocessing environment with Blender 4.x and libigl compatibility fixes. See [Preprocessing Guide](docker/PREPROCESSING_README.md) for fine-tuning data preparation.
 - Jul 26, 2025: 🤗 We release the first open-source, simulation-capable, immersive 3D world generation model, [HunyuanWorld-1.0](https://github.com/Tencent-Hunyuan/HunyuanWorld-1.0)!
 - Jun 19, 2025: 👋 We present the [technical report](https://arxiv.org/pdf/2506.15442) of Hunyuan3D-2.1, please check out the details and spark some discussion!
 - Jun 13, 2025: 🤗 We release the first production-ready 3D asset generation model, Hunyuan3D-2.1!
@@ -90,6 +91,28 @@ It takes 10 GB VRAM for shape generation, 21GB for texture generation and 29GB f
 ## 🤗 Get Started with Hunyuan3D 2.1
 
 Hunyuan3D 2.1 supports Macos, Windows, Linux. You may follow the next steps to use Hunyuan3D 2.1 via:
+
+### 🐳 Data Preprocessing for Fine-tuning (New!)
+
+If you want to **fine-tune** the model on your own 3D data, we provide a Docker-based preprocessing environment:
+
+```bash
+# Quick start
+make preprocessing-build
+make preprocessing
+
+# See full documentation
+cat docker/PREPROCESSING_README.md
+```
+
+**Features:**
+- ✅ Blender 4.1 with multi-view rendering
+- ✅ Automated watertight mesh processing
+- ✅ Point cloud and SDF generation
+- ✅ Smart resume (skip completed steps)
+- ✅ Batch processing support
+
+See the [Preprocessing Guide](docker/PREPROCESSING_README.md) for detailed instructions.
 
 ### Install Requirements
 We test our model with Python 3.10 and PyTorch 2.5.1+cu124.

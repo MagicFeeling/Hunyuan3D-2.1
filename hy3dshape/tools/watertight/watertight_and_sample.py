@@ -88,39 +88,47 @@ def sample_sdf(mesh, random_surface, sharp_surface):
     np.random.shuffle(sharp_near_points)
 
     sign_type = igl.SIGNED_DISTANCE_TYPE_FAST_WINDING_NUMBER
+
+    # Convert trimesh arrays to numpy arrays explicitly
+    vertices = np.asarray(mesh.vertices, dtype=np.float64)
+    faces = np.asarray(mesh.faces, dtype=np.int64)
+
+    # New libigl API returns 4 values: (sdf, face_indices, closest_points, normals)
     try:
-        vol_sdf, I, C = igl.signed_distance(
-            vol_points.astype(np.float32), 
-            mesh.vertices, mesh.faces, 
-            return_normals=False,
+        result = igl.signed_distance(
+            vol_points.astype(np.float64),
+            vertices, faces,
             sign_type=sign_type)
+        vol_sdf = result[0]
     except:
-        vol_sdf, I, C = igl.signed_distance(
-            vol_points.astype(np.float32), 
-            mesh.vertices, mesh.faces, 
-            return_normals=False)
+        result = igl.signed_distance(
+            vol_points.astype(np.float64),
+            vertices, faces)
+        vol_sdf = result[0]
+
     try:
-        random_near_sdf, I, C = igl.signed_distance(
-            random_near_points.astype(np.float32), 
-            mesh.vertices, mesh.faces, 
-            return_normals=False,
+        result = igl.signed_distance(
+            random_near_points.astype(np.float64),
+            vertices, faces,
             sign_type=sign_type)
+        random_near_sdf = result[0]
     except:
-        random_near_sdf, I, C = igl.signed_distance(
-            random_near_points.astype(np.float32), 
-            mesh.vertices, mesh.faces, 
-            return_normals=False)
+        result = igl.signed_distance(
+            random_near_points.astype(np.float64),
+            vertices, faces)
+        random_near_sdf = result[0]
+
     try:
-        sharp_near_sdf, I, C = igl.signed_distance(
-            sharp_near_points.astype(np.float32), 
-            mesh.vertices, mesh.faces, 
-            return_normals=False,
+        result = igl.signed_distance(
+            sharp_near_points.astype(np.float64),
+            vertices, faces,
             sign_type=sign_type)
+        sharp_near_sdf = result[0]
     except:
-        sharp_near_sdf, I, C = igl.signed_distance(
-            sharp_near_points.astype(np.float32), 
-            mesh.vertices, mesh.faces, 
-            return_normals=False)
+        result = igl.signed_distance(
+            sharp_near_points.astype(np.float64),
+            vertices, faces)
+        sharp_near_sdf = result[0]
         
     vol_label = -vol_sdf
     random_near_label = -random_near_sdf
@@ -187,12 +195,30 @@ def Watertight(V, F, epsilon = 2.0/256, grid_res = 256):
     grid_points = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
 
     # Compute SDF at grid points using igl.signed_distance with pseudo normals
-    sdf, _, _ = igl.signed_distance(
-        grid_points, V, F, sign_type=igl.SIGNED_DISTANCE_TYPE_PSEUDONORMAL
-    )
+    # Handle different libigl API versions
+    try:
+        # Newer version may return different number of values
+        result = igl.signed_distance(
+            grid_points, V, F, sign_type=igl.SIGNED_DISTANCE_TYPE_PSEUDONORMAL
+        )
+        if isinstance(result, tuple):
+            sdf = result[0]
+        else:
+            sdf = result
+    except (ValueError, TypeError):
+        # Fallback for older API
+        sdf, _, _ = igl.signed_distance(
+            grid_points, V, F, sign_type=igl.SIGNED_DISTANCE_TYPE_PSEUDONORMAL
+        )
  
-    # igl.marching_cubes returns (vertices, faces)
-    mc_verts, mc_faces = igl.marching_cubes(epsilon - np.abs(sdf), grid_points, grid_res, grid_res, grid_res, 0.0)
+    # igl.marching_cubes returns (vertices, faces) or just vertices in newer versions
+    result = igl.marching_cubes(epsilon - np.abs(sdf), grid_points, grid_res, grid_res, grid_res, 0.0)
+    if isinstance(result, tuple) and len(result) == 2:
+        mc_verts, mc_faces = result
+    else:
+        # Newer API might return differently
+        mc_verts = result[0] if isinstance(result, tuple) else result
+        mc_faces = result[1] if isinstance(result, tuple) and len(result) > 1 else np.array([])
 
     # mc_verts: (k x 3) array of vertices of the epsilon contour
     # mc_faces: (l x 3) array of faces of the epsilon contour
@@ -220,4 +246,9 @@ if __name__ == '__main__':
     np.savez(export_surface, **surface_data)
     export_sdf = f'{name}_sdf.npz'
     np.savez(export_sdf, **sdf_data)
-    igl.write_obj(f'{name}_watertight.obj', mc_verts, mc_faces)
+
+    # Handle different igl API versions for writing OBJ
+    try:
+        igl.write_obj(f'{name}_watertight.obj', mc_verts, mc_faces)
+    except AttributeError:
+        igl.writeOBJ(f'{name}_watertight.obj', mc_verts, mc_faces)
