@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  gradio:
+    image: hunyuan3d21:latest
+    container_name: hunyuan3d-gradio
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount the entire repo (for code updates)
+      - ./hy3dshape:/workspace/Hunyuan3D-2.1/hy3dshape
+      - ./hy3dpaint:/workspace/Hunyuan3D-2.1/hy3dpaint
+      # Mount HuggingFace cache (shared with fine-tuning)
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      # Mount output directory for generated models
+      - ./output:/workspace/output
+    working_dir: /workspace/Hunyuan3D-2.1
+    ports:
+      - "7860:7860"
+    shm_size: '16gb'
+    ipc: host
+    stdin_open: true
+    tty: true
+    command: python gradio_app.py --port 7860

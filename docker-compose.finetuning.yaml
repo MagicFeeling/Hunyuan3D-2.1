@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  finetuning:
+    image: hunyuan3d21:latest
+    container_name: hunyuan3d-finetuning
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount the entire repo (for code updates)
+      - ./hy3dshape:/workspace/Hunyuan3D-2.1/hy3dshape
+      # Mount preprocessed training data
+      - ./src/preprocessing/data/preprocessed:/workspace/data/preprocessed
+      # Mount raw data (for test images)
+      - ./src/preprocessing/data/raw:/workspace/data/raw
+      # Mount fine-tuning config
+      - ./src/finetuning:/workspace/finetuning
+      # Mount output directory for checkpoints and logs
+      - ./output:/workspace/output
+      # Mount HuggingFace cache (to persist downloaded models)
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    working_dir: /workspace/Hunyuan3D-2.1/hy3dshape
+    shm_size: '16gb'  # Increase shared memory for DataLoader workers
+    ipc: host
+    stdin_open: true
+    tty: true
+    command: /bin/bash

@@ -55,6 +55,12 @@ RUN conda install -c conda-forge libstdcxx-ng -y
 
 RUN pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 
+# Install torch-cluster for point cloud operations (needed for fine-tuning)
+RUN pip install torch-cluster -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+
+# Install peft for LoRA fine-tuning support
+RUN pip install peft
+
 # Clone Hunyuan3D-2.1 repository
 RUN git clone https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1.git
 
